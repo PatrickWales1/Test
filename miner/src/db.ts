@@ -33,6 +33,7 @@ export async function initializeDatabase(c: MiningConfig): Promise<any> {
     `sql/contestation_votes.sql`,
     `sql/jobs.sql`,
     `sql/failed_jobs.sql`,
+    `sql/indexes.sql`
   ].map((path) => `${__dirname}/${path}`);
 
   async function loadSqlFile(src: string) {
