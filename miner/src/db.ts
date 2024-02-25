@@ -42,6 +42,8 @@ export async function initializeDatabase(c: MiningConfig): Promise<any> {
         if (err) {
           log.error(`Loading SQL file: ${src} failed: ${JSON.stringify(err)}`);
           return reject(err);
+        } else {
+          log.debug(`Loaded SQL file: ${src}`);
         }
 
         resolve(true);
