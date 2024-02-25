@@ -801,7 +801,7 @@ async function processSolve(taskid: string) {
       try {
         log.debug(`Submitting solution ${taskid} ${cid}`);
         const tx = await solver.submitSolution(taskid, cid, {
-          gasLimit: 500_000,
+          gasLimit: 2_500_000,
         });
         const receipt = await tx.wait();
         log.info(`Solution submitted in ${receipt.transactionHash}`);
@@ -816,7 +816,7 @@ async function processSolve(taskid: string) {
           },
         });
       } catch (e) {
-        log.debug(JSON.stringify(e));
+        log.debug('FAILED SUBMITTING', JSON.stringify(e));
         const {
           validator: existingSolutionValidator,
           blocktime: existingSolutionBlocktime,
