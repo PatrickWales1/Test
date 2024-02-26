@@ -665,6 +665,20 @@ async function processSubmitTask(
     const receipt = await tx.wait();
 
     log.debug(`OUR-LOGS: (1) END: Automine submitTask ${receipt.transactionHash}`);
+
+    try {
+      log.debug(`OUR-LOGS: (1) START: Wait for submitTask lookupAndInsertTask`);
+      const { owner } = await expretry(async () => await arbius.tasks(taskid), 20);
+      log.debug(`OUR-LOGS: (1) END: Wait for submitTask lookupAndInsertTask owner: ${owner}`);
+      if (owner == null) {
+        throw new Error(`Task owner is null`);
+      }
+    } catch (e) {
+      log.error(`OUR-LOGS: Automine submitTask failed to wait for task ${JSON.stringify(e)}`);
+      return;
+    }
+
+    const task = await lookupAndInsertTask(taskid);
   } catch (e) {
     log.error(`OUR-LOGS: Automine submitTask failed ${JSON.stringify(e)}`);
   }
