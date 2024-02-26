@@ -1335,9 +1335,11 @@ export async function main() {
       continue;
     }
 
-    let claims = jobs.filter(j => j.method == 'claim')
+    let claims = jobs
+      .filter(j => j.method == 'claim')
+      .filter(j => j.waituntil < now());
     log.debug(`OUR-LOGS: (6) START: processAllClaims len: ${claims.length}`);
-    if (claims.length > 5) {
+    if (claims.length > 0) {
       await processAllClaims(claims);
     } 
 
