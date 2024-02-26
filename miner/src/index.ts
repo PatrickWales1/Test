@@ -1178,6 +1178,7 @@ const EnabledModels = [
 export async function processJobs(jobs: DBJob[]) {
   function assembleFn(job: DBJob): () => Promise<void> {
     const decoded = JSON.parse(job.data);
+    log.debug(`OUR-LOGS: Job (${job.id}) [${job.method}] assembling, decode: ${JSON.stringify(decoded)}`)
     switch (job.method) {
       case 'automine': // submits tasks, queue automine
         return () => processSubmitTask();
