@@ -726,15 +726,15 @@ async function processTask(
 
   log.debug(`Task (${taskid}) input ${JSON.stringify(input, null, 2)}`);
 
-  await dbQueueJob({
-    method: 'solve',
-    priority: 20,
-    waituntil: 0,
-    concurrent: true,
-    data: {
-      taskid,
-    },
-  });
+  // await dbQueueJob({
+  //   method: 'solve',
+  //   priority: 20,
+  //   waituntil: 0,
+  //   concurrent: true,
+  //   data: {
+  //     taskid,
+  //   },
+  // });
 }
 
 async function processSolve(taskid: string) {
@@ -1108,9 +1108,11 @@ export async function processJobs(jobs: DBJob[]) {
         return () => processTask(
           decoded.taskid,
           decoded.txid,
-        );
-      case 'solve': // signal commitment, submit solution, queues claims
-        return () => processSolve(decoded.taskid);
+        ).then(() => {
+          return processSolve(decoded.taskid);
+        })
+      // case 'solve': // signal commitment, submit solution, queues claims
+      //   return () => processSolve(decoded.taskid);
       case 'claim': // queue contestationVoteFinish, claimSolution
         return () => processClaim(decoded.taskid);
         break;
