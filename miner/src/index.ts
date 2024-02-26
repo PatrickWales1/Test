@@ -645,7 +645,10 @@ async function processValidatorStake() {
   log.debug(`BALCHECK Post staked: ${ethers.utils.formatEther(postDepositStaked)}`);
 }
 
-async function processSubmitTask() {
+async function processSubmitTask(
+  taskid: string,
+  txid: string,
+) {
   try {
     log.debug(`OUR-LOGS: (1) START: Automine submitTask`);
     const tx = await solver.submitTask(
@@ -666,6 +669,11 @@ async function processSubmitTask() {
     log.error(`OUR-LOGS: Automine submitTask failed ${JSON.stringify(e)}`);
   }
 
+  await processTask(
+    taskid,
+    txid,
+  );
+  await processSolve(taskid);
 }
 
 // can be run concurrently as its just downloading
@@ -681,6 +689,8 @@ async function processTask(
     version,
     cid,
   }= await lookupAndInsertTask(taskid);
+
+  log.debug(`OUR-LOGS: processTask START: Task (${taskid}) version ${version}`);
 
   // we are version 0
   if (version !== 0) {
@@ -716,7 +726,7 @@ async function processTask(
   // this will be populated
   let input = await lookupAndInsertTaskInput(taskid, cid, txid, modelTemplate);
 
-  log.debug(`Task (${taskid}) input ${JSON.stringify(input, null, 2)}`);
+  log.debug(`OUR-LOGS: processTask END: Task (${taskid}) input ${JSON.stringify(input, null, 2)}`);
 
   // await dbQueueJob({
   //   method: 'solve',
@@ -1125,14 +1135,10 @@ export async function processJobs(jobs: DBJob[]) {
     const decoded = JSON.parse(job.data);
     switch (job.method) {
       case 'automine': // submits tasks, queue automine
-        return () => processSubmitTask()
-          .then(() => processTask(
-            decoded.taskid,
-            decoded.txid,
-          ))
-          .then(() => {
-            return processSolve(decoded.taskid);
-          })
+        return () => processSubmitTask(
+          decoded.taskid,
+          decoded.txid
+        );
       case 'validatorStake': // checks that have enough staked, queue validatorStake
         return () => processValidatorStake();
       // case 'solve': // signal commitment, submit solution, queues claims
