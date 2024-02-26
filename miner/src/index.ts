@@ -939,7 +939,7 @@ async function processSolve(taskid: string) {
           method: "claim",
           priority: 50,
           waituntil: now() + 2000 + 120, // 1 min buffer to avoid time drift claim issues
-          concurrent: true,
+          concurrent: false,
           data: {
             taskid,
           },
@@ -974,91 +974,13 @@ async function processSolve(taskid: string) {
   await dbQueueJob({
     method: 'automine',
     priority: 5,
-    waituntil: now()+3,
+    waituntil: 0,
     concurrent: false,
     data: {
     },
   });
 
 }
-
-// async function contestSolution(taskid: string) {
-//   try {
-//     log.info(`Attempt to contest ${taskid} solution`);
-
-//     const validatorStake = await getValidatorStaked();
-//     const validatorMinimum = await expretry(async () => await arbius.getValidatorMinimum());
-//     if (validatorStake.lt(validatorMinimum.mul(110).div(100))) {
-//       log.info("Validator stake is less than 110% of minimum, not contesting");
-//       return;
-//     }
-
-//     const { owner } = await expretry(async () => await arbius.tasks(taskid));
-//     log.debug(`contestSolution ${taskid} from ${owner}`);
-//     if (owner === wallet.address) {
-//       log.error(`Attempting to contest own solution ${taskid}  --- lets not do this`);
-//       log.error(`Please report this to the developers`);
-//       return;
-//     }
-
-//     const tx = await solver.submitContestation(taskid);
-//     const receipt = await tx.wait();
-//     log.info(`Submitted contestation for ${taskid} in ${receipt.transactionHash}`);
-//     await dbQueueJob({
-//       method: 'contestationVoteFinish',
-//       priority: 200,
-//       waituntil: now()+5010,
-//       concurrent: true,
-//       data: {
-//         taskid,
-//       },
-//     });
-//   } catch (e) {
-//     log.debug(JSON.stringify(e));
-//     // check if someone else submitted a contestation
-//     const {
-//       validator: existingContestationValidator,
-//       blocktime: existingContestationBlocktime,
-//     } = await expretry(async () => await arbius.contestations(taskid));
-
-//     // someone else contested first
-//     if (existingContestationValidator == "0x0000000000000000000000000000000000000000") {
-//       log.error(`An unknown error occurred when we tried to contest ${taskid}`);
-//       return;
-//     }
-
-//     log.info(`Contestation for ${taskid} was already created by ${existingContestationValidator}`);
-//     // if we are contesting it, then we agree it is invalid
-//     await voteOnContestation(taskid, true);
-//   }
-// }
-
-// async function voteOnContestation(taskid: string, yea: boolean) {
-//   const canVoteStatus = await expretry(async () => await arbius.validatorCanVote(wallet.address, taskid));
-//   const canVote = canVoteStatus == 0x0; // success code
-
-//   if (! canVote) {
-//     log.debug(`[voteOnContestation] Contestation ${taskid} cannot vote (code ${canVoteStatus})`);
-//     return;
-//   }
-
-//   const validatorStake = await getValidatorStaked();
-//   const validatorMinimum = await expretry(async () => await arbius.getValidatorMinimum());
-//   if (validatorStake.lt(validatorMinimum.mul(110).div(100))) {
-//     log.info("Validator stake is less than 110% of minimum, not voting");
-//     return;
-//   }
-
-//   try {
-//     log.info(`Attempt to vote ${yea ? 'YES' : 'NO'} on ${taskid} contestation`);
-//     const tx = await solver.voteOnContestation(taskid, yea);
-//     const receipt = await tx.wait();
-//     log.info(`Contestation vote ${yea ? 'YES' : 'NO'} submitted on ${taskid} in ${receipt.transactionHash}`);
-//   } catch (e) {
-//     log.debug(JSON.stringify(e));
-//     log.error(`Failed voting on contestation ${taskid}`);
-//   }
-// }
 
 async function processClaim(taskid: string) {
   const receipt = await expretry(async () => {
@@ -1073,16 +995,6 @@ async function processClaim(taskid: string) {
     log.debug("processClaim [contestationValidator]", contestationValidator);
     if (contestationValidator != "0x0000000000000000000000000000000000000000") {
       log.error(`Contestation found for solution ${taskid}, cannot claim`);
-
-      // await dbQueueJob({
-      //   method: 'contestationVoteFinish',
-      //   priority: 200,
-      //   waituntil: now()+5010,
-      //   concurrent: true,
-      //   data: {
-      //     taskid,
-      //   },
-      // });
 
       return null;
     }
@@ -1245,29 +1157,6 @@ export async function processJobs(jobs: DBJob[]) {
         return () => processSubmitTask();
       case 'validatorStake': // checks that have enough staked, queue validatorStake
         return () => processValidatorStake();
-      // case 'solve': // signal commitment, submit solution, queues claims
-      //   return () => processSolve(decoded.taskid);
-      // case 'claim': // queue contestationVoteFinish, claimSolution
-      //   return () => processClaim(decoded.taskid);
-      //   break;
-      /*
-      case 'pinGovernanceProposal':
-        return () => processPinGovernanceProposal(
-          decoded.proposalId,
-          decoded.description,
-        );
-      */
-      // case 'pinTaskInput':
-      //   log.debug(`OUR-LOGS: Job pinTaskInput (${job.id}) [${job.method}] assembling, decode: ${JSON.stringify(decoded)}`)
-      //   return () => processPinTaskInput(
-      //     decoded.taskid,
-      //     decoded.input,
-      //   );
-      //   break;
-      case 'contestationVoteFinish': // contestationVoteFinish
-       return () => processContestationVoteFinish(decoded.taskid);
-       break;
-
       default:
         log.error(`Job (${job.id}) method (${job.method}) has no implementation`);
         process.exit(1);
@@ -1367,7 +1256,7 @@ export async function main() {
     method: 'validatorStake',
     priority: 30,
     waituntil: 0,
-    concurrent: true,
+    concurrent: false,
     data: {},
   });
 
@@ -1446,7 +1335,8 @@ export async function main() {
       continue;
     }
 
-    let claims = jobs.filter(j => j.method === 'claim')
+    let claims = jobs.filter(j => j.method == 'claim')
+    log.debug(`OUR-LOGS: (6) START: processAllClaims len: ${claims.length}`);
     if (claims.length > 20) {
       await processAllClaims(jobs);
     } 
