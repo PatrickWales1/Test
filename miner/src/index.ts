@@ -1151,10 +1151,7 @@ export async function processJobs(jobs: DBJob[]) {
     const decoded = JSON.parse(job.data);
     switch (job.method) {
       case 'automine': // submits tasks, queue automine
-        return () => processSubmitTask(
-          decoded.taskid,
-          decoded.txid
-        );
+        return () => processSubmitTask();
       case 'validatorStake': // checks that have enough staked, queue validatorStake
         return () => processValidatorStake();
       // case 'solve': // signal commitment, submit solution, queues claims
