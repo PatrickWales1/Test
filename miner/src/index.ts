@@ -660,7 +660,7 @@ async function processSubmitTask() {
   let txid: any = null;
   try {
     log.debug(`OUR-LOGS: (1) START: Automine submitTask - model: ${c.automine.model}, fee: ${c.automine.fee}, input: ${JSON.stringify(c.automine)}`);
-    const tx = await solver.submitTask(
+    const taskidReceipt = await solver.submitTask(
       c.automine.version,
       wallet.address,
       c.automine.model,
@@ -669,15 +669,13 @@ async function processSubmitTask() {
       {
         gasLimit: 2_500_000,
       }
-    );
+    ).wait();
+    log.debug(`OUR-LOGS: (1) END: Automine submitTask ${taskidReceipt.transactionHash}, receipt: ${JSON.stringify(taskidReceipt)}`);      
 
-    const receipt = await tx.wait();
-    
-    log.debug(`OUR-LOGS: (1) END: Automine submitTask ${receipt.transactionHash}, receipt: ${JSON.stringify(receipt)}`);
-    let taskSubmittedEvent = receipt.events.filter((e: any) => e.event == 'TaskSubmitted');
-    log.debug(`OUR-LOGS: (1) END: Automine submitTask taskSubmittedEvent: ${JSON.stringify(taskSubmittedEvent)}`);
-    log.debug(`OUR-LOGS: (1) END: Automine submitTask taskSubmittedEvent: ${taskSubmittedEvent?.[0]?.topics}`);
-    taskid = taskSubmittedEvent?.[0].topics?.[0];
+    const taskSubmittedEvent = taskidReceipt.events![0];
+    const { id: taskid } = taskSubmittedEvent.args;
+    log.debug(`OUR-LOGS: (1) END: Automine submitTask taskid: ${taskid}`);
+
     txid = taskSubmittedEvent?.[0].transactionHash;
     log.debug(`OUR-LOGS: (1) END: Automine submitTask taskid: ${taskid}`);
     if (taskid == null) {
@@ -843,30 +841,33 @@ async function processSolve(taskid: string) {
         const tx = await arbius.signalCommitment(commitment, {
           gasLimit: 450_000,
         });
-        // const receipt = await tx.wait(); // we dont wait here to be faster
-        log.info(`OUR-LOGS: (3) Commitment signalled in ${tx.hash}`);
+        const receipt = await tx.wait(); // we dont wait here to be faster
+        log.info(`OUR-LOGS: (3) Commitment signalled in ${tx.hash}, receipt: ${JSON.stringify(receipt)}`);
     }
   } catch (e) {
     log.error(`OUR-LOGS: Commitment submission failed ${JSON.stringify(e)}`);
     return;
   }
 
-  try {
-    log.debug(`OUR-LOGS: (4) START: Wait for Commitment: '${commitment}' and taskId: '${taskid}'`);
-    const {
-      commitmentLookup
-    } = await expretry(async () => await arbius.commitments(commitment), 20);
-    log.debug(`OUR-LOGS: (4) END: Wait for Commitment ${commitmentLookup} for commitment: '${commitment}' and taskId: '${taskid}'`);
-    if (commitmentLookup == null) {
-      log.debug(`OUR-LOGS: Commitment lookup failed for ${commitment}`);
-    }
-  } catch (e) {
-    log.error(`OUR-LOGS: Commitment lookup failed ${JSON.stringify(e)}`);
-    return;
-  }
+  // try {
+  //   if (taskid != '0xc3d3e0544c80e3bb83f62659259ae1574f72a91515ab3cae3dd75cf77e1b0aea') {
+  //     log.debug(`OUR-LOGS: (4) START: Wait for Commitment: '${commitment}' and taskId: '${taskid}'`);
+  //     const {
+  //       commitmentLookup
+  //     } = await expretry(async () => await arbius.commitments(commitment), 20);
+  //     log.debug(`OUR-LOGS: (4) END: Wait for Commitment ${commitmentLookup} for commitment: '${commitment}' and taskId: '${taskid}'`);
+  //     if (commitmentLookup == null) {
+  //       log.debug(`OUR-LOGS: Commitment lookup failed for ${commitment}`);
+  //     }
+  //   }
+  // } catch (e) {
+  //   log.error(`OUR-LOGS: Commitment lookup failed ${JSON.stringify(e)}`);
+  //   return;
+  // }
 
   // we will retry in case we didnt wait long enough for commitment
   // if this fails otherwise, it could be because another submitted solution
+
   await expretry(
     async () => {
       try {
@@ -917,7 +918,7 @@ async function processSolve(taskid: string) {
       method: 'automine',
       priority: 5,
       waituntil: now()+c.automine.delay,
-      concurrent: true,
+      concurrent: false,
       data: {
       },
     });
@@ -1318,7 +1319,7 @@ export async function main() {
       method: 'automine',
       priority: 5,
       waituntil: 0,
-      concurrent: true,
+      concurrent: false,
       data: {
       },
     });
