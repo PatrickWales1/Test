@@ -1322,13 +1322,13 @@ export async function main() {
     await versionCheck();
   });
 
-  arbius.on('TaskSubmitted', (
-    taskid:  string,
-    modelid: string,
-    fee:     BigNumber,
-    sender:  string,
-    evt:     ethers.Event,
-  ) => eventHandlerTaskSubmitted(taskid, evt));
+  // arbius.on('TaskSubmitted', (
+  //   taskid:  string,
+  //   modelid: string,
+  //   fee:     BigNumber,
+  //   sender:  string,
+  //   evt:     ethers.Event,
+  // ) => eventHandlerTaskSubmitted(taskid, evt));
 
   arbius.on('TaskRetracted', (
     taskid:  string,
