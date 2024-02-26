@@ -687,8 +687,8 @@ async function processSubmitTask() {
       return;
     }
 
-    const task = await lookupAndInsertTask(taskid);
-   throw 'DONT PROCESS FURTHER'
+    // const task = await lookupAndInsertTask(taskid);
+  //  throw 'DONT PROCESS FURTHER'
   } catch (e) {
     log.error(`OUR-LOGS: Automine submitTask failed ${JSON.stringify(e)}`);
   }
@@ -793,6 +793,7 @@ async function processSolve(taskid: string) {
   }
   const { model, cid: inputCid } = lookup;
 
+  log.debug(`OUR-LOGS: (2) START: processSolve got taskid ${taskid} with model ${model} and inputCid ${inputCid}, EnabledModels ${JSON.stringify(EnabledModels)}`);
   const m = getModelById(EnabledModels, model);
   if (m === null) {
     log.error(`Task (${taskid}) could not find model (${model})`);
