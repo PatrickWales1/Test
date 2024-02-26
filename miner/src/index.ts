@@ -971,17 +971,15 @@ async function processSolve(taskid: string) {
   );
 
   log.debug(`OUR-LOGS: (2) END: processSolve taskid: ${taskid}`);
-  if (c.automine.enabled) {
-    log.debug(`OUR-LOGS: (2) END: processSolve automine enabled`);
-    await dbQueueJob({
-      method: 'automine',
-      priority: 5,
-      waituntil: now()+20,
-      concurrent: false,
-      data: {
-      },
-    });
-  }
+  await dbQueueJob({
+    method: 'automine',
+    priority: 5,
+    waituntil: now()+20,
+    concurrent: false,
+    data: {
+    },
+  });
+
 }
 
 // async function contestSolution(taskid: string) {
