@@ -4,27 +4,6 @@ import FormData from 'form-data';
 import axios from 'axios';
 import * as http_client from 'ipfs-http-client';
 import { MiningConfig } from './types';
-import * as winston from 'winston';
-import DailyRotateFile from 'winston-daily-rotate-file';
-
-
-// Define the custom file transport using winston-daily-rotate-file
-const fileTransport = new DailyRotateFile({
-  filename: 'pod-connection-%DATE%.log',
-  dirname: './logs', // Directory path
-  maxSize: '20m', // Rotate files larger than 20MB
-  maxFiles: '14d', // Keep logs for 14 days
-  zippedArchive: true, // Gzip archived log files
-});
-
-const logger = winston.createLogger({
-  format: winston.format.combine(
-    winston.format.timestamp({ format: 'YYYY-MM-DD HH:mm:ss' }),
-    winston.format.printf(info => `${info.timestamp} ${info.level}: ${info.message}`)
-  ),
-  transports: [fileTransport],
-});
-
 
 // TODO type correctly
 let ipfsClient: any = null;
@@ -60,13 +39,7 @@ export async function pinFilesToIPFS(c: MiningConfig, taskid: string, paths: str
         wrapWithDirectory: true,
       };
 
-      const startTime = Date.now();
-      const duration = Date.now() - startTime;
-
       const res = ipfsClient.addAll(data, options);
-      
-      logger.info(`IPFS Execution time: ${duration} ms`);
-
       for await (const { path, cid } of res) {
         if (path === '') {
           return cid.toString();

@@ -33,8 +33,7 @@ async function start(configPath: string) {
   }
 
   log.debug(`Logging to ${c.log_path}`);
- 
-  log.debug(`starting to load db from ${c.db_path}`);
+  
   await initializeDatabase(c);
   log.debug(`Database loaded from ${c.db_path}`);
 

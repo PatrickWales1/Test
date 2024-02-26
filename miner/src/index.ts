@@ -76,27 +76,6 @@ import {
   depositForValidator,
   getValidatorStaked,
 } from './blockchain';
-import * as winston from 'winston';
-import DailyRotateFile from 'winston-daily-rotate-file';
-
-
-// Define the custom file transport using winston-daily-rotate-file
-const fileTransport = new DailyRotateFile({
-  filename: 'pod-connection-%DATE%.log',
-  dirname: './logs', // Directory path
-  maxSize: '20m', // Rotate files larger than 20MB
-  maxFiles: '14d', // Keep logs for 14 days
-  zippedArchive: true, // Gzip archived log files
-});
-
-const logger = winston.createLogger({
-  format: winston.format.combine(
-    winston.format.timestamp({ format: 'YYYY-MM-DD HH:mm:ss' }),
-    winston.format.printf(info => `${info.timestamp} ${info.level}: ${info.message}`)
-  ),
-  transports: [fileTransport],
-});
-
 
 // type interfaces;
 interface LookupResult {
@@ -361,7 +340,7 @@ async function eventHandlerContestationSubmitted(
     method: 'contestationVoteFinish',
     priority: 200,
     waituntil: now()+5010,
-    concurrent: true,
+    concurrent: false,
     data: {
       taskid,
     },
@@ -669,7 +648,7 @@ async function processAutomine() {
       method: 'automine',
       priority: 5,
       waituntil: now()+c.automine.delay,
-      concurrent: true,
+      concurrent: false,
       data: {
       },
     });
@@ -730,7 +709,7 @@ async function processTask(
     method: 'solve',
     priority: 20,
     waituntil: 0,
-    concurrent: true,
+    concurrent: false,
     data: {
       taskid,
     },
@@ -801,7 +780,7 @@ async function processSolve(taskid: string) {
       try {
         log.debug(`Submitting solution ${taskid} ${cid}`);
         const tx = await solver.submitSolution(taskid, cid, {
-          gasLimit: 2_500_000,
+          gasLimit: 500_000,
         });
         const receipt = await tx.wait();
         log.info(`Solution submitted in ${receipt.transactionHash}`);
@@ -810,13 +789,13 @@ async function processSolve(taskid: string) {
           method: "claim",
           priority: 50,
           waituntil: now() + 2000 + 120, // 1 min buffer to avoid time drift claim issues
-          concurrent: true,
+          concurrent: false,
           data: {
             taskid,
           },
         });
       } catch (e) {
-        log.debug('FAILED SUBMITTING', JSON.stringify(e));
+        log.debug(JSON.stringify(e));
         const {
           validator: existingSolutionValidator,
           blocktime: existingSolutionBlocktime,
@@ -868,7 +847,7 @@ async function contestSolution(taskid: string) {
       method: 'contestationVoteFinish',
       priority: 200,
       waituntil: now()+5010,
-      concurrent: true,
+      concurrent: false,
       data: {
         taskid,
       },
@@ -938,7 +917,7 @@ async function processClaim(taskid: string) {
         method: 'contestationVoteFinish',
         priority: 200,
         waituntil: now()+5010,
-        concurrent: true,
+        concurrent: false,
         data: {
           taskid,
         },
@@ -1065,13 +1044,7 @@ const EnabledModels = [
     ],
     getfiles: async (m: Model, taskid: string, input: any) => {
       const url = c.ml.cog[Config.models.kandinsky2.id].url;
-
-      const startTime = Date.now();
-      const duration = Date.now() - startTime;
-  
       const res = await axios.post(url, { input });
-  
-      logger.info(`POD Execution time: ${duration} ms`);
 
       if (! res) {
         throw new Error('unable to getfiles');
@@ -1100,18 +1073,18 @@ export async function processJobs(jobs: DBJob[]) {
   function assembleFn(job: DBJob): () => Promise<void> {
     const decoded = JSON.parse(job.data);
     switch (job.method) {
-      case 'automine': // submits tasks, queue automine
+      case 'automine':
         return () => processAutomine();
-      case 'validatorStake': // checks that have enough staked, queue validatorStake
+      case 'validatorStake':
         return () => processValidatorStake();
-      case 'task': // queues tasks to solve
+      case 'task':
         return () => processTask(
           decoded.taskid,
           decoded.txid,
         );
-      case 'solve': // signal commitment, submit solution, queues claims
+      case 'solve':
         return () => processSolve(decoded.taskid);
-      case 'claim': // queue contestationVoteFinish, claimSolution
+      case 'claim':
         return () => processClaim(decoded.taskid);
         break;
       /*
@@ -1127,7 +1100,7 @@ export async function processJobs(jobs: DBJob[]) {
           decoded.input,
         );
         break;
-      case 'contestationVoteFinish': // contestationVoteFinish
+      case 'contestationVoteFinish':
        return () => processContestationVoteFinish(decoded.taskid);
        break;
 
@@ -1152,9 +1125,9 @@ export async function processJobs(jobs: DBJob[]) {
     log.debug(`Job (${job.id}) [${job.method}] processing`);
 
     const f = assembleFn(job)()
-      .catch(async (e) => {
-        await dbStoreFailedJob(job);
-      });
+    .catch(async (e) => {
+      await dbStoreFailedJob(job);
+    });
 
     if (! concurrent) {
       await f;
@@ -1190,7 +1163,7 @@ async function versionCheck() {
 export async function main() {
   // need extra for ethers
   log.debug("Setting max file listeners to 100 for ethers");
-  process.setMaxListeners(250); // TODO: Update this for throughput
+  process.setMaxListeners(100);
 
   // we dont care about old ones
   log.debug("Clearing old automatically added retry jobs");
@@ -1230,7 +1203,7 @@ export async function main() {
     method: 'validatorStake',
     priority: 30,
     waituntil: 0,
-    concurrent: true,
+    concurrent: false,
     data: {},
   });
 
@@ -1239,7 +1212,7 @@ export async function main() {
       method: 'automine',
       priority: 5,
       waituntil: 0,
-      concurrent: true,
+      concurrent: false,
       data: {
       },
     });
