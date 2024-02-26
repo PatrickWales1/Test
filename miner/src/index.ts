@@ -667,7 +667,8 @@ async function processSubmitTask() {
     log.debug(`OUR-LOGS: (1) END: Automine submitTask ${receipt.transactionHash}, receipt: ${JSON.stringify(receipt)}`);
     let taskSubmittedEvent = receipt.events.filter((e: any) => e.event == 'TaskSubmitted');
     log.debug(`OUR-LOGS: (1) END: Automine submitTask taskSubmittedEvent: ${JSON.stringify(taskSubmittedEvent)}`);
-    taskid = !taskSubmittedEvent?.topics?.[0];
+    taskid = taskSubmittedEvent?.topics?.[0];
+    log.debug(`OUR-LOGS: (1) END: Automine submitTask taskid: ${taskid}`);
     if (taskid) {
       throw new Error(`TaskSubmitted event not found`);
     }
@@ -702,7 +703,7 @@ async function processTask(
   taskid: string,
   txid: string,
 ) {
-  log.debug(`OUR-LOGS: processTask START: Task (${taskid}), txid: ${txid}`);
+  log.debug(`OUR-LOGS: processTask START: Task ${taskid}, txid: ${txid}`);
   const {
     model,
     fee,
