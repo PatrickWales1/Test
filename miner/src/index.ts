@@ -667,7 +667,7 @@ async function processSubmitTask(
     log.debug(`OUR-LOGS: (1) END: Automine submitTask ${receipt.transactionHash}`);
 
     try {
-      log.debug(`OUR-LOGS: (1) START: Wait for submitTask lookupAndInsertTask`);
+      log.debug(`OUR-LOGS: (1) START: Wait for submitTask lookupAndInsertTask taskId: ${taskid}`);
       const { owner } = await expretry(async () => await arbius.tasks(taskid), 20);
       log.debug(`OUR-LOGS: (1) END: Wait for submitTask lookupAndInsertTask owner: ${owner}`);
       if (owner == null) {
