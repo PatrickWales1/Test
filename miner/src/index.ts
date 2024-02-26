@@ -528,6 +528,7 @@ async function processPinTaskInput(
       `task-${taskid}.json`,
     ));
     log.debug(`Task input ${taskid} pinned with ${cid}`);
+    return cid;
   } catch (e) {
     log.debug(`OUR-LOGS: processPinTaskInput FAILED to pin taskid: ${taskid} input: ${input} error: ${JSON.stringify(e)}`);
     throw e;
@@ -655,6 +656,61 @@ async function processValidatorStake() {
   log.debug(`BALCHECK Post staked: ${ethers.utils.formatEther(postDepositStaked)}`);
 }
 
+/*
+async function processSubmitTask2() {
+
+  // Submit task
+  const submitTask = await solver.submitTask(
+    c.automine.version,
+    wallet.address,
+    c.automine.model,
+    BigNumber.from(c.automine.fee),
+    ethers.utils.hexlify(ethers.utils.toUtf8Bytes(JSON.stringify(c.automine.input))),
+    {
+      gasLimit: 2_500_000,
+    }
+  )
+  let taskidReceipt = await submitTask.wait();
+  const taskSubmittedEvent = taskidReceipt.events![0];
+  const { id: taskid } = taskSubmittedEvent.args;
+
+  // Pin CID
+  const tx = await arbius.provider.getTransaction(taskidReceipt.transactionHash);
+  const parsed = arbius.interface.parseTransaction(tx);
+  log.debug(`OUR-LOGS: CID ISSUE: parsedTransaction: ${JSON.stringify(parsed)}`);
+
+  let preprocessed_str = Buffer.from(parsed.args.input_.substring(2), 'hex').toString();
+  let preprocessed_obj = JSON.parse(preprocessed_str);
+  log.debug(`OUR-LOGS: CID ISSUE: preprocessed_obj: ${JSON.stringify(preprocessed_obj)}`);
+  const cid = await processPinTaskInput(taskid, preprocessed_str);
+ 
+  // Generate commitment
+  const commitment = generateCommitment(wallet.address, taskid, cid);
+  const signalCommitmentTx = await arbius.signalCommitment(commitment, {
+    gasLimit: 450_000,
+  });
+  const signalCommitmentReceipt = await signalCommitmentTx.wait(); // we dont wait here to be faster
+  log.info(`OUR-LOGS: (3) Commitment signalled in ${tx.hash}, receipt: ${JSON.stringify(signalCommitmentReceipt)}`);
+
+  // Generate solution
+  const submitSolutionTx = await solver.submitSolution(taskid, cid, {
+    gasLimit: 2_500_000,
+  });
+  const receipt = await submitSolutionTx.wait();
+  log.info(`OUR-LOGS: (5) Solution submitted in ${receipt.transactionHash}`);
+
+  await dbQueueJob({
+    method: "claim",
+    priority: 50,
+    waituntil: now() + 2000 + 120, // 1 min buffer to avoid time drift claim issues
+    concurrent: true,
+    data: {
+      taskid,
+    },
+  });
+}
+*/
+
 async function processSubmitTask() {
   let taskid: any = null;
   let txid: any = null;
@@ -674,10 +730,10 @@ async function processSubmitTask() {
     log.debug(`OUR-LOGS: (1) END: Automine submitTask ${taskidReceipt.transactionHash}, receipt: ${JSON.stringify(taskidReceipt)}`);      
 
     const taskSubmittedEvent = taskidReceipt.events![0];
-    const { id: taskid } = taskSubmittedEvent.args;
+    taskid = taskSubmittedEvent.args;
     log.debug(`OUR-LOGS: (1) END: Automine submitTask taskid: ${taskid}`);
 
-    txid = taskSubmittedEvent?.[0].transactionHash;
+    txid = taskidReceipt.transactionHash;
     log.debug(`OUR-LOGS: (1) END: Automine submitTask taskid: ${taskid}`);
     if (taskid == null) {
       throw new Error(`TaskSubmitted event not found`);
@@ -977,32 +1033,32 @@ async function processSolve(taskid: string) {
 //   }
 // }
 
-async function voteOnContestation(taskid: string, yea: boolean) {
-  const canVoteStatus = await expretry(async () => await arbius.validatorCanVote(wallet.address, taskid));
-  const canVote = canVoteStatus == 0x0; // success code
+// async function voteOnContestation(taskid: string, yea: boolean) {
+//   const canVoteStatus = await expretry(async () => await arbius.validatorCanVote(wallet.address, taskid));
+//   const canVote = canVoteStatus == 0x0; // success code
 
-  if (! canVote) {
-    log.debug(`[voteOnContestation] Contestation ${taskid} cannot vote (code ${canVoteStatus})`);
-    return;
-  }
+//   if (! canVote) {
+//     log.debug(`[voteOnContestation] Contestation ${taskid} cannot vote (code ${canVoteStatus})`);
+//     return;
+//   }
 
-  const validatorStake = await getValidatorStaked();
-  const validatorMinimum = await expretry(async () => await arbius.getValidatorMinimum());
-  if (validatorStake.lt(validatorMinimum.mul(110).div(100))) {
-    log.info("Validator stake is less than 110% of minimum, not voting");
-    return;
-  }
+//   const validatorStake = await getValidatorStaked();
+//   const validatorMinimum = await expretry(async () => await arbius.getValidatorMinimum());
+//   if (validatorStake.lt(validatorMinimum.mul(110).div(100))) {
+//     log.info("Validator stake is less than 110% of minimum, not voting");
+//     return;
+//   }
 
-  try {
-    log.info(`Attempt to vote ${yea ? 'YES' : 'NO'} on ${taskid} contestation`);
-    const tx = await solver.voteOnContestation(taskid, yea);
-    const receipt = await tx.wait();
-    log.info(`Contestation vote ${yea ? 'YES' : 'NO'} submitted on ${taskid} in ${receipt.transactionHash}`);
-  } catch (e) {
-    log.debug(JSON.stringify(e));
-    log.error(`Failed voting on contestation ${taskid}`);
-  }
-}
+//   try {
+//     log.info(`Attempt to vote ${yea ? 'YES' : 'NO'} on ${taskid} contestation`);
+//     const tx = await solver.voteOnContestation(taskid, yea);
+//     const receipt = await tx.wait();
+//     log.info(`Contestation vote ${yea ? 'YES' : 'NO'} submitted on ${taskid} in ${receipt.transactionHash}`);
+//   } catch (e) {
+//     log.debug(JSON.stringify(e));
+//     log.error(`Failed voting on contestation ${taskid}`);
+//   }
+// }
 
 async function processClaim(taskid: string) {
   const receipt = await expretry(async () => {
