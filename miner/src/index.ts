@@ -1338,7 +1338,7 @@ export async function main() {
     let claims = jobs.filter(j => j.method == 'claim')
     log.debug(`OUR-LOGS: (6) START: processAllClaims len: ${claims.length}`);
     if (claims.length > 5) {
-      await processAllClaims(jobs);
+      await processAllClaims(claims);
     } 
 
     let hasActiveJobs = false;
@@ -1362,6 +1362,7 @@ export async function main() {
 
 
 async function processAllClaims(claims: DBJob[]) {
+
   for (const claim of claims) {
     const decoded = JSON.parse(claim.data);
     log.debug(`OUR-LOGS: (6) START: processAllClaims ${JSON.stringify(decoded)}`);
