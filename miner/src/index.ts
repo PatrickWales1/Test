@@ -970,11 +970,13 @@ async function processSolve(taskid: string) {
     1.25
   );
 
+  log.debug(`OUR-LOGS: (2) END: processSolve taskid: ${taskid}`);
   if (c.automine.enabled) {
+    log.debug(`OUR-LOGS: (2) END: processSolve automine enabled`);
     await dbQueueJob({
       method: 'automine',
       priority: 5,
-      waituntil: now()+3,
+      waituntil: now()+20,
       concurrent: false,
       data: {
       },
@@ -1440,6 +1442,7 @@ export async function main() {
   // job processor / main loop
   while (true) {
     const jobs = await dbGetJobs();
+    log.debug(`OUR-LOGS: ALL JOBS ${JSON.stringify(jobs)}`);
     if (jobs.length === 0) {
       await sleep(100);
       continue;
