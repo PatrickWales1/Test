@@ -1247,9 +1247,9 @@ export async function processJobs(jobs: DBJob[]) {
         return () => processValidatorStake();
       // case 'solve': // signal commitment, submit solution, queues claims
       //   return () => processSolve(decoded.taskid);
-      case 'claim': // queue contestationVoteFinish, claimSolution
-        return () => processClaim(decoded.taskid);
-        break;
+      // case 'claim': // queue contestationVoteFinish, claimSolution
+      //   return () => processClaim(decoded.taskid);
+      //   break;
       /*
       case 'pinGovernanceProposal':
         return () => processPinGovernanceProposal(
@@ -1446,6 +1446,11 @@ export async function main() {
       continue;
     }
 
+    let claims = jobs.filter(j => j.method === 'claim')
+    if (claims.length > 20) {
+      await processAllClaims(jobs);
+    } 
+
     let hasActiveJobs = false;
     for (const job of jobs) {
       if (job.waituntil < now()) {
@@ -1462,5 +1467,14 @@ export async function main() {
     log.debug(`Job queue has ${jobs.length} jobs`);
     // log.debug(jobs);
     await processJobs(jobs);
+  }
+}
+
+
+async function processAllClaims(claims: DBJob[]) {
+  for (const claim of claims) {
+    const decoded = JSON.parse(claim.data);
+    log.debug(`OUR-LOGS: (6) START: processAllClaims ${JSON.stringify(decoded)}`);
+    await processClaim(decoded.taskid);
   }
 }
