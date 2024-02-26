@@ -662,13 +662,13 @@ async function processSubmitTask() {
     );
 
     const receipt = await tx.wait();
-    txid = receipt.transactionHash;
     
     log.debug(`OUR-LOGS: (1) END: Automine submitTask ${receipt.transactionHash}, receipt: ${JSON.stringify(receipt)}`);
     let taskSubmittedEvent = receipt.events.filter((e: any) => e.event == 'TaskSubmitted');
     log.debug(`OUR-LOGS: (1) END: Automine submitTask taskSubmittedEvent: ${JSON.stringify(taskSubmittedEvent)}`);
     log.debug(`OUR-LOGS: (1) END: Automine submitTask taskSubmittedEvent: ${taskSubmittedEvent?.[0]?.topics}`);
     taskid = taskSubmittedEvent?.[0].topics?.[0];
+    txid = taskSubmittedEvent?.[0].transactionHash;
     log.debug(`OUR-LOGS: (1) END: Automine submitTask taskid: ${taskid}`);
     if (taskid == null) {
       throw new Error(`TaskSubmitted event not found`);
@@ -677,7 +677,7 @@ async function processSubmitTask() {
     try {
       log.debug(`OUR-LOGS: (1) START: Wait for submitTask lookupAndInsertTask taskId: ${taskid}`);
       const { owner } = await expretry(async () => await arbius.tasks(taskid), 20);
-      log.debug(`OUR-LOGS: (1) END: Wait for submitTask lookupAndInsertTask owner: ${owner}`);
+      log.debug(`OUR-LOGS: (1) END: Wait for submitTask lookupAndInsertTask owner: ${owner}, taskid: ${taskid}`);
       if (owner == null) {
         throw new Error(`Task owner is null`);
       }
