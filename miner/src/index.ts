@@ -645,10 +645,7 @@ async function processValidatorStake() {
   log.debug(`BALCHECK Post staked: ${ethers.utils.formatEther(postDepositStaked)}`);
 }
 
-async function processSubmitTask(
-  taskid: string,
-  txid: string,
-) {
+async function processSubmitTask() {
   try {
     log.debug(`OUR-LOGS: (1) START: Automine submitTask`);
     const tx = await solver.submitTask(
@@ -663,11 +660,12 @@ async function processSubmitTask(
     );
 
     const receipt = await tx.wait();
+    
+    log.debug(`OUR-LOGS: (1) END: Automine submitTask ${receipt.transactionHash}, receipt: ${JSON.stringify(receipt)}`);
 
-    log.debug(`OUR-LOGS: (1) END: Automine submitTask ${receipt.transactionHash}`);
-
+    /*
     try {
-      log.debug(`OUR-LOGS: (1) START: Wait for submitTask lookupAndInsertTask taskId: ${taskid}`);
+      log.debug(`OUR-LOGS: (1) START: Wait for submitTask lookupAndInsertTask taskId: ${receipt.transactionHash}`);
       const { owner } = await expretry(async () => await arbius.tasks(taskid), 20);
       log.debug(`OUR-LOGS: (1) END: Wait for submitTask lookupAndInsertTask owner: ${owner}`);
       if (owner == null) {
@@ -679,15 +677,19 @@ async function processSubmitTask(
     }
 
     const task = await lookupAndInsertTask(taskid);
+    */
+   throw 'DONT PROCESS FURTHER'
   } catch (e) {
     log.error(`OUR-LOGS: Automine submitTask failed ${JSON.stringify(e)}`);
   }
 
+  /*
   await processTask(
     taskid,
     txid,
   );
   await processSolve(taskid);
+  */
 }
 
 // can be run concurrently as its just downloading
