@@ -647,6 +647,7 @@ async function processValidatorStake() {
 
 async function processSubmitTask() {
   try {
+    log.debug(`OUR-LOGS: (1) START: Automine submitTask`);
     const tx = await solver.submitTask(
       c.automine.version,
       wallet.address,
@@ -660,7 +661,7 @@ async function processSubmitTask() {
 
     const receipt = await tx.wait();
 
-    log.debug(`OUR-LOGS: (1) Automine submitTask ${receipt.transactionHash}`);
+    log.debug(`OUR-LOGS: (1) END: Automine submitTask ${receipt.transactionHash}`);
   } catch (e) {
     log.error(`OUR-LOGS: Automine submitTask failed ${JSON.stringify(e)}`);
   }
@@ -737,8 +738,9 @@ async function processSolve(taskid: string) {
     cid: solutionCid
   } = await expretry(async () => await arbius.solutions(taskid));
   try {
-  const { owner } = await expretry(async () => await arbius.tasks(taskid));
-    log.debug(`OUR-LOGS: (2) processSolve got taskid ${taskid} with solutionValidator ${solutionValidator} and owner ${owner}`);
+    log.debug(`OUR-LOGS: (2) START: processSolve got taskid ${taskid} with solutionValidator ${solutionValidator}`);
+    const { owner } = await expretry(async () => await arbius.tasks(taskid), 20);
+    log.debug(`OUR-LOGS: (2) END: processSolve got taskid ${taskid} with solutionValidator ${solutionValidator} and owner ${owner}`);
   } catch (e) {
     log.error(`OUR-LOGS: processSolve failed ${JSON.stringify(e)}`);
     return;
@@ -792,10 +794,14 @@ async function processSolve(taskid: string) {
   }
 
   try {
+    log.debug(`OUR-LOGS: (4) START: Wait for Commitment: '${commitment}' and taskId: '${taskid}'`);
     const {
       commitmentLookup
-    } = await expretry(async () => await arbius.commitments(commitment));
-    log.debug(`OUR-LOGS: (4) Wait for Commitment ${commitmentLookup} for commitment: '${commitment}' and taskId: '${taskid}'`);
+    } = await expretry(async () => await arbius.commitments(commitment), 20);
+    log.debug(`OUR-LOGS: (4) END: Wait for Commitment ${commitmentLookup} for commitment: '${commitment}' and taskId: '${taskid}'`);
+    if (commitmentLookup == null) {
+      throw new Error(`Commitment lookup failed for ${commitment}`);
+    }
   } catch (e) {
     log.error(`OUR-LOGS: Commitment lookup failed ${JSON.stringify(e)}`);
     return;
