@@ -7,6 +7,8 @@
   "license": "MIT",
   "scripts": {
     "clean": "rimraf ./build",
+    "tcs": "tsc",
+    "copy": "copyfiles -u 1 src/**/*.sql build/",
     "build": "yarn clean && tsc && copyfiles -u 1 src/**/*.sql build/",
     "start": "node build/start.js",
     "start:dev": "npx nodemon",
@@ -48,6 +50,8 @@
     "nodemon": "^2.0.22",
     "replicate": "replicate/replicate-javascript",
     "sqlite3": "^5.1.6",
-    "tslog": "^4.8.2"
+    "tslog": "^4.8.2",
+    "winston": "^3.11.0",
+    "winston-daily-rotate-file": "^5.0.0"
   }
 }

@@ -33,6 +33,7 @@ export async function initializeDatabase(c: MiningConfig): Promise<any> {
     `sql/contestation_votes.sql`,
     `sql/jobs.sql`,
     `sql/failed_jobs.sql`,
+    `sql/indexes.sql`
   ].map((path) => `${__dirname}/${path}`);
 
   async function loadSqlFile(src: string) {
@@ -41,14 +42,22 @@ export async function initializeDatabase(c: MiningConfig): Promise<any> {
         if (err) {
           log.error(`Loading SQL file: ${src} failed: ${JSON.stringify(err)}`);
           return reject(err);
+        } else {
+          log.debug(`Loaded SQL file: ${src}`);
         }
 
         resolve(true);
       });
     });
   }
-  
-  return Promise.all(paths.map((path) => loadSqlFile(path)));
+
+  async function loadSqlFiles() {
+    for (const file of paths) {
+      await loadSqlFile(file);
+    }
+  }
+
+  await loadSqlFiles();
 }
 
 // gets a task, solution, or contestation
