@@ -121,6 +121,7 @@ async function lookupAndInsertTask(taskid: string): Promise<Task> {
   return new Promise(async (resolve, reject) => {
     log.debug(`lookupAndInsertTask ${taskid}`);
     const existing = await dbGetTask(taskid);
+    log.debug(`OUR-LOGS: lookupAndInsertTask got existing ${JSON.stringify(existing)}`);
     if (existing) {
       log.debug(`Task (${taskid}) already in db`);
       return resolve({
@@ -142,6 +143,7 @@ async function lookupAndInsertTask(taskid: string): Promise<Task> {
       version,
       cid,
     } = await expretry(async () => await arbius.tasks(taskid));
+    log.debug(`lookupAndInsertTask got taskid: ${taskid}, model: ${model} fee, ${fee}, owner: ${owner}, blocktime: ${blocktime}, version: ${version}, cid: ${cid}`);
 
     log.debug(`lookupAndInsertTask inserting ${taskid}`);
     await dbStoreTask({
