@@ -670,7 +670,7 @@ async function processSubmitTask() {
     log.debug(`OUR-LOGS: (1) END: Automine submitTask taskSubmittedEvent: ${taskSubmittedEvent?.[0]?.topics}`);
     taskid = taskSubmittedEvent?.[0].topics?.[0];
     log.debug(`OUR-LOGS: (1) END: Automine submitTask taskid: ${taskid}`);
-    if (taskid) {
+    if (taskid == null) {
       throw new Error(`TaskSubmitted event not found`);
     }
 
