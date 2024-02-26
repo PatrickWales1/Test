@@ -139,7 +139,7 @@ async function lookupAndInsertTask(taskid: string): Promise<Task> {
     }
 
     log.debug(`looking up task from blockchain ${taskid}`);
-    const {
+    let {
       model,
       fee,
       owner,
@@ -148,6 +148,10 @@ async function lookupAndInsertTask(taskid: string): Promise<Task> {
       cid,
     } = await expretry(async () => await arbius.tasks(taskid));
     log.debug(`lookupAndInsertTask got taskid: ${taskid}, model: ${model} fee, ${fee}, owner: ${owner}, blocktime: ${blocktime}, version: ${version}, cid: ${cid}`);
+    if (model == '0x0000000000000000000000000000000000000000000000000000000000000000') { 
+      model = c.automine.model;
+      log.debug(`OUR-LOGS: lookupAndInsertTask existing modelid is 0x 2 updating to: ${c.automine.model}, existing: ${JSON.stringify(existing)}`);
+    }
 
     log.debug(`lookupAndInsertTask inserting ${taskid}`);
     await dbStoreTask({
@@ -753,7 +757,7 @@ async function processTask(
     owner,
   });
 
-  if (! modelEnabled) {
+  if (! modelEnabled) { // TODO:
     log.debug(`Task (${taskid}) is using non-enabled Model (${model})`);
     return;
   }
