@@ -1337,7 +1337,7 @@ export async function main() {
 
     let claims = jobs.filter(j => j.method == 'claim')
     log.debug(`OUR-LOGS: (6) START: processAllClaims len: ${claims.length}`);
-    if (claims.length > 20) {
+    if (claims.length > 5) {
       await processAllClaims(jobs);
     } 
 
