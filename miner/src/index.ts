@@ -123,7 +123,11 @@ async function lookupAndInsertTask(taskid: string): Promise<Task> {
     const existing = await dbGetTask(taskid);
     log.debug(`OUR-LOGS: lookupAndInsertTask got existing ${JSON.stringify(existing)}`);
     if (existing) {
-      log.debug(`Task (${taskid}) already in db`);
+      log.debug(`Task (${taskid}) already in db`); // TODO: Hack to fix the issue in the chain
+      if (existing.modelid == '0x0000000000000000000000000000000000000000000000000000000000000000') { 
+        existing.modelid = c.automine.model;
+        log.debug(`OUR-LOGS: lookupAndInsertTask existing modelid is 0x updating to: ${c.automine.model}, existing: ${JSON.stringify(existing)}`);
+      }
       return resolve({
         model:     existing.modelid,
         fee:       BigNumber.from(existing.fee),
