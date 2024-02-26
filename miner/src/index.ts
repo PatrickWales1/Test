@@ -1197,6 +1197,7 @@ export async function processJobs(jobs: DBJob[]) {
         );
       */
       case 'pinTaskInput':
+        log.debug(`OUR-LOGS: Job pinTaskInput (${job.id}) [${job.method}] assembling, decode: ${JSON.stringify(decoded)}`)
         return () => processPinTaskInput(
           decoded.taskid,
           decoded.input,
