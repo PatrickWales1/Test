@@ -813,14 +813,22 @@ async function processSolve(taskid: string) {
     return;
   }
 
+  log.debug(`OUR-LOGS: (2) processSolve BEFORE PARSE got taskid ${taskid}`);  
   const input = JSON.parse(taskInput.data);
+  log.debug(`OUR-LOGS: (2) processSolve got taskid ${taskid} with input ${JSON.stringify(input, null, 2)}`);
 
-  const cid = await m.getcid(c, m, taskid, input);
-  if (!cid) {
-    log.error(`Task (${taskid}) CID could not be generated`);
-    return;
+  let cid: any = null;
+  try {
+    cid = await m.getcid(c, m, taskid, input);
+    if (!cid) {
+      log.error(`Task (${taskid}) CID could not be generated`);
+      return;
+    }
+    log.info(`CID ${cid} generated`);
+  } catch (e) {
+    log.error(`OUR-LOGS: (2) processSolve FAILED Task (${taskid}) CID could not be generated ${JSON.stringify(e)}`);
+    throw e;
   }
-  log.info(`CID ${cid} generated`);
 
   const commitment = generateCommitment(wallet.address, taskid, cid);
 
