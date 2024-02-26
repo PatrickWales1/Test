@@ -660,7 +660,7 @@ async function processSubmitTask() {
   let txid: any = null;
   try {
     log.debug(`OUR-LOGS: (1) START: Automine submitTask - model: ${c.automine.model}, fee: ${c.automine.fee}, input: ${JSON.stringify(c.automine)}`);
-    const taskidReceipt = await solver.submitTask(
+    const submitTask = await solver.submitTask(
       c.automine.version,
       wallet.address,
       c.automine.model,
@@ -669,7 +669,8 @@ async function processSubmitTask() {
       {
         gasLimit: 2_500_000,
       }
-    ).wait();
+    )
+    let taskidReceipt = await submitTask.wait();
     log.debug(`OUR-LOGS: (1) END: Automine submitTask ${taskidReceipt.transactionHash}, receipt: ${JSON.stringify(taskidReceipt)}`);      
 
     const taskSubmittedEvent = taskidReceipt.events![0];
@@ -682,18 +683,18 @@ async function processSubmitTask() {
       throw new Error(`TaskSubmitted event not found`);
     }
 
-    try {
-      log.debug(`OUR-LOGS: (1) START: Wait for submitTask lookupAndInsertTask taskId: ${taskid}`);
-      const { owner } = await expretry(async () => await arbius.tasks(taskid), 20);
-      log.debug(`OUR-LOGS: (1) END: Wait for submitTask lookupAndInsertTask owner: ${owner}, taskid: ${taskid}`);
-      if (owner == null) {
-        log.debug(`OUR-LOGS: Automine submitTask failed to wait for task owner`);
-        throw new Error(`Task owner is null`);
-      }
-    } catch (e) {
-      log.error(`OUR-LOGS: Automine submitTask failed to wait for task ${JSON.stringify(e)}`);
-      return;
-    }
+    // try {
+    //   log.debug(`OUR-LOGS: (1) START: Wait for submitTask lookupAndInsertTask taskId: ${taskid}`);
+    //   const { owner } = await expretry(async () => await arbius.tasks(taskid), 20);
+    //   log.debug(`OUR-LOGS: (1) END: Wait for submitTask lookupAndInsertTask owner: ${owner}, taskid: ${taskid}`);
+    //   if (owner == null) {
+    //     log.debug(`OUR-LOGS: Automine submitTask failed to wait for task owner`);
+    //     throw new Error(`Task owner is null`);
+    //   }
+    // } catch (e) {
+    //   log.error(`OUR-LOGS: Automine submitTask failed to wait for task ${JSON.stringify(e)}`);
+    //   return;
+    // }
 
     // const task = await lookupAndInsertTask(taskid);
   //  throw 'DONT PROCESS FURTHER'
