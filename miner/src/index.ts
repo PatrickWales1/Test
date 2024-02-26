@@ -667,6 +667,7 @@ async function processSubmitTask() {
     log.debug(`OUR-LOGS: (1) END: Automine submitTask ${receipt.transactionHash}, receipt: ${JSON.stringify(receipt)}`);
     let taskSubmittedEvent = receipt.events.filter((e: any) => e.event == 'TaskSubmitted');
     log.debug(`OUR-LOGS: (1) END: Automine submitTask taskSubmittedEvent: ${JSON.stringify(taskSubmittedEvent)}`);
+    log.debug(`OUR-LOGS: (1) END: Automine submitTask taskSubmittedEvent: ${taskSubmittedEvent?.topics}`);
     taskid = taskSubmittedEvent?.topics?.[0];
     log.debug(`OUR-LOGS: (1) END: Automine submitTask taskid: ${taskid}`);
     if (taskid) {
