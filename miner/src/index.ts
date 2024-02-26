@@ -225,17 +225,8 @@ async function lookupAndInsertTaskInput(
   input.seed = taskid2Seed(taskid);
   await dbStoreTaskInput(taskid, cid, input);
 
-  log.debug(`OUR-LOGS: CID ISSUE: ABOUT TO QUEUE JOB (${taskid}) CID (${cid}) loaded from TXID (${txid}), input: ${preprocessed_str}`);  
-  await dbQueueJob({
-    method: 'pinTaskInput',
-    priority: 10,
-    waituntil: 0,
-    concurrent: false,
-    data: {
-      taskid,
-      input: preprocessed_str,
-    },
-  });
+  log.debug(`OUR-LOGS: CID ISSUE: ABOUT TO PIN TASK (${taskid}) CID (${cid}) loaded from TXID (${txid}), input: ${preprocessed_str}`);  
+  await processPinTaskInput(taskid, preprocessed_str);
 
   return input;
 }
@@ -1204,13 +1195,13 @@ export async function processJobs(jobs: DBJob[]) {
           decoded.description,
         );
       */
-      case 'pinTaskInput':
-        log.debug(`OUR-LOGS: Job pinTaskInput (${job.id}) [${job.method}] assembling, decode: ${JSON.stringify(decoded)}`)
-        return () => processPinTaskInput(
-          decoded.taskid,
-          decoded.input,
-        );
-        break;
+      // case 'pinTaskInput':
+      //   log.debug(`OUR-LOGS: Job pinTaskInput (${job.id}) [${job.method}] assembling, decode: ${JSON.stringify(decoded)}`)
+      //   return () => processPinTaskInput(
+      //     decoded.taskid,
+      //     decoded.input,
+      //   );
+      //   break;
       case 'contestationVoteFinish': // contestationVoteFinish
        return () => processContestationVoteFinish(decoded.taskid);
        break;
