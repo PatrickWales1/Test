@@ -649,7 +649,7 @@ async function processSubmitTask() {
   let taskid: any = null;
   let txid: any = null;
   try {
-    log.debug(`OUR-LOGS: (1) START: Automine submitTask`);
+    log.debug(`OUR-LOGS: (1) START: Automine submitTask - model: ${c.automine.model}, fee: ${c.automine.fee}, input: ${JSON.stringify(c.automine)}`);
     const tx = await solver.submitTask(
       c.automine.version,
       wallet.address,
