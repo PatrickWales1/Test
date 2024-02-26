@@ -182,34 +182,37 @@ async function lookupAndInsertTaskInput(
 
   const cachedInput = await dbGetTaskInput(taskid, cid);
   if (cachedInput !== null) {
-    log.debug(`Task (${taskid}) CID (${cid}) loaded from cache`);
+    log.debug(`OUR-LOGS: CID ISSUE: Task (${taskid}) CID (${cid}) loaded from cache`);
     input = JSON.parse(cachedInput.data);
     return input;
   }
 
-  log.debug(`Task (${taskid}) CID (${cid}) being loaded from TXID (${txid})`);
+  log.debug(`OUR-LOGS: CID ISSUE: Task (${taskid}) CID (${cid}) being loaded from TXID (${txid})`);
   // will be populated from task cid when downloaded
   let preprocessed_str = null;
   let preprocessed_obj = null;
 
   const tx = await expretry(async () => await arbius.provider.getTransaction(txid));
   if (! tx) {
-    throw new Error('unable to retrieve tx');
+    log.debug(`OUR-LOGS: CID ISSUE: Task (${taskid}) CID (${cid}) unable to retrieve tx`);
+    throw new Error('OUR-LOGS: CID ISSUE: unable to retrieve tx');
   }
   const parsed = arbius.interface.parseTransaction(tx);
+  log.debug(`OUR-LOGS: CID ISSUE: parsedTransaction: ${JSON.stringify(parsed)}`);
 
   try {
     preprocessed_str = Buffer.from(parsed.args.input_.substring(2), 'hex').toString();
     preprocessed_obj = JSON.parse(preprocessed_str);
+    log.debug(`OUR-LOGS: CID ISSUE: preprocessed_obj: ${JSON.stringify(preprocessed_obj)}`);
   } catch (e) {
-    log.warn(`Task (${taskid}) request was unable to be parsed`);
+    log.debug(`OUR-LOGS: CID ISSUE: Task (${taskid}) request was unable to be parsed`);
     await dbStoreInvalidTask(taskid);
     return;
   }
 
   const hydrated = hydrateInput(preprocessed_obj, modelTemplate);
   if (hydrated.err) {
-    log.warn(`Task (${taskid}) hydration error ${hydrated.errmsg}`);
+    log.debug(`OUR-LOGS: CID ISSUE: Task (${taskid}) hydration error ${hydrated.errmsg}`);
     await dbStoreInvalidTask(taskid);
     return;
   }
@@ -218,11 +221,12 @@ async function lookupAndInsertTaskInput(
   input.seed = taskid2Seed(taskid);
   await dbStoreTaskInput(taskid, cid, input);
 
+  log.debug(`OUR-LOGS: CID ISSUE: ABOUT TO QUEUE JOB (${taskid}) CID (${cid}) loaded from TXID (${txid}), input: ${preprocessed_str}`);  
   await dbQueueJob({
     method: 'pinTaskInput',
     priority: 10,
     waituntil: 0,
-    concurrent: true,
+    concurrent: false,
     data: {
       taskid,
       input: preprocessed_str,

@@ -108,6 +108,7 @@ export async function dbGetTaskInput(
   cid: string,
 ): Promise<DBTaskInput|null> {
   const query = `SELECT * FROM task_inputs WHERE taskid=? AND cid=?`;
+  log.debug(`OUR-LOGS: dbGetTaskInput: ${query} ${taskid} ${cid}`);
   return new Promise((resolve, reject) => {
     return db.get(query, [taskid, cid], (err, row) => {
       if (row) {
