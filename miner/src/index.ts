@@ -646,6 +646,8 @@ async function processValidatorStake() {
 }
 
 async function processSubmitTask() {
+  let taskid: any = null;
+  let txid: any = null;
   try {
     log.debug(`OUR-LOGS: (1) START: Automine submitTask`);
     const tx = await solver.submitTask(
@@ -660,12 +662,18 @@ async function processSubmitTask() {
     );
 
     const receipt = await tx.wait();
+    txid = receipt.transactionHash;
     
     log.debug(`OUR-LOGS: (1) END: Automine submitTask ${receipt.transactionHash}, receipt: ${JSON.stringify(receipt)}`);
+    let taskSubmittedEvent = receipt.events.filter((e: any) => e.event == 'TaskSubmitted');
+    log.debug(`OUR-LOGS: (1) END: Automine submitTask taskSubmittedEvent: ${JSON.stringify(taskSubmittedEvent)}`);
+    taskid = !taskSubmittedEvent?.topics?.[0];
+    if (taskid) {
+      throw new Error(`TaskSubmitted event not found`);
+    }
 
-    /*
     try {
-      log.debug(`OUR-LOGS: (1) START: Wait for submitTask lookupAndInsertTask taskId: ${receipt.transactionHash}`);
+      log.debug(`OUR-LOGS: (1) START: Wait for submitTask lookupAndInsertTask taskId: ${taskid}`);
       const { owner } = await expretry(async () => await arbius.tasks(taskid), 20);
       log.debug(`OUR-LOGS: (1) END: Wait for submitTask lookupAndInsertTask owner: ${owner}`);
       if (owner == null) {
@@ -677,19 +685,16 @@ async function processSubmitTask() {
     }
 
     const task = await lookupAndInsertTask(taskid);
-    */
    throw 'DONT PROCESS FURTHER'
   } catch (e) {
     log.error(`OUR-LOGS: Automine submitTask failed ${JSON.stringify(e)}`);
   }
 
-  /*
   await processTask(
     taskid,
     txid,
   );
   await processSolve(taskid);
-  */
 }
 
 // can be run concurrently as its just downloading
@@ -697,6 +702,7 @@ async function processTask(
   taskid: string,
   txid: string,
 ) {
+  log.debug(`OUR-LOGS: processTask START: Task (${taskid}), txid: ${txid}`);
   const {
     model,
     fee,
