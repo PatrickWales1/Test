@@ -521,13 +521,18 @@ async function processPinTaskInput(
   taskid: string,
   input: string,
 ) {
-  const cid = await expretry(async () => await pinFileToIPFS(
-    c,
-    Buffer.from(input, 'utf-8'),
-    `task-${taskid}.json`,
-  ));
-
-  log.debug(`Task input ${taskid} pinned with ${cid}`);
+  log.debug(`OUR-LOGS: processPinTaskInput START: taskid: ${taskid} input: ${input}`);
+  try {
+    const cid = await expretry(async () => await pinFileToIPFS(
+      c,
+      Buffer.from(input, 'utf-8'),
+      `task-${taskid}.json`,
+    ));
+    log.debug(`Task input ${taskid} pinned with ${cid}`);
+  } catch (e) {
+    log.debug(`OUR-LOGS: processPinTaskInput FAILED to pin taskid: ${taskid} input: ${input} error: ${JSON.stringify(e)}`);
+    throw e;
+  }
 }
 
 async function processContestationVoteFinish(
