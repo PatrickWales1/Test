@@ -836,12 +836,16 @@ async function processSolve(taskid: string) {
 
   const commitment = generateCommitment(wallet.address, taskid, cid);
 
+  // If commitment already exists then return
+
   try {
-    const tx = await arbius.signalCommitment(commitment, {
-      gasLimit: 450_000,
-    });
-    // const receipt = await tx.wait(); // we dont wait here to be faster
-    log.info(`OUR-LOGS: (3) Commitment signalled in ${tx.hash}`);
+    if (taskid != '0xc3d3e0544c80e3bb83f62659259ae1574f72a91515ab3cae3dd75cf77e1b0aea') {
+        const tx = await arbius.signalCommitment(commitment, {
+          gasLimit: 450_000,
+        });
+        // const receipt = await tx.wait(); // we dont wait here to be faster
+        log.info(`OUR-LOGS: (3) Commitment signalled in ${tx.hash}`);
+    }
   } catch (e) {
     log.error(`OUR-LOGS: Commitment submission failed ${JSON.stringify(e)}`);
     return;
@@ -854,7 +858,7 @@ async function processSolve(taskid: string) {
     } = await expretry(async () => await arbius.commitments(commitment), 20);
     log.debug(`OUR-LOGS: (4) END: Wait for Commitment ${commitmentLookup} for commitment: '${commitment}' and taskId: '${taskid}'`);
     if (commitmentLookup == null) {
-      throw new Error(`Commitment lookup failed for ${commitment}`);
+      log.debug(`OUR-LOGS: Commitment lookup failed for ${commitment}`);
     }
   } catch (e) {
     log.error(`OUR-LOGS: Commitment lookup failed ${JSON.stringify(e)}`);
