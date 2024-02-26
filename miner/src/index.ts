@@ -679,6 +679,7 @@ async function processSubmitTask() {
       const { owner } = await expretry(async () => await arbius.tasks(taskid), 20);
       log.debug(`OUR-LOGS: (1) END: Wait for submitTask lookupAndInsertTask owner: ${owner}, taskid: ${taskid}`);
       if (owner == null) {
+        log.debug(`OUR-LOGS: Automine submitTask failed to wait for task owner`);
         throw new Error(`Task owner is null`);
       }
     } catch (e) {
