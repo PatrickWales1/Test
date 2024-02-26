@@ -974,7 +974,7 @@ async function processSolve(taskid: string) {
     await dbQueueJob({
       method: 'automine',
       priority: 5,
-      waituntil: now()+c.automine.delay,
+      waituntil: now()+3,
       concurrent: false,
       data: {
       },
