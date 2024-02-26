@@ -730,7 +730,7 @@ async function processSubmitTask() {
     log.debug(`OUR-LOGS: (1) END: Automine submitTask ${taskidReceipt.transactionHash}, receipt: ${JSON.stringify(taskidReceipt)}`);      
 
     const taskSubmittedEvent = taskidReceipt.events![0];
-    taskid = taskSubmittedEvent![0];
+    taskid = taskSubmittedEvent.args![0];
     log.debug(`OUR-LOGS: (1) END: Automine submitTask taskid: ${taskid}`);
 
     txid = taskidReceipt.transactionHash;
