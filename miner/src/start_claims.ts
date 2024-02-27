@@ -17,12 +17,12 @@ async function start(configPath: string) {
     process.exit(1);
   }
 
+  let logPath = 'log_claims.txt';
+  initializeLogger(logPath);
+
   let portOffset = parseInt(process.argv[3]);
   log.debug(`Starting RPC on port ${c.rpc.port + portOffset}`);  
 
-
-  let logPath = 'log_claims.txt';
-  initializeLogger(logPath);
   if (c.evilmode) {
     for (let i=0; i<20; ++i) {
       log.warn('YOU HAVE EVIL MODE ENABLED, YOU WILL BE SLASHED');

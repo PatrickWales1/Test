@@ -16,12 +16,13 @@ async function start(configPath: string) {
     console.error(`unable to parse ${configPath}`);
     process.exit(1);
   }
-
+  
   let portOffset = parseInt(process.argv[3]);
-  log.debug(`Starting RPC on port ${c.rpc.port + portOffset}`);  
-
   let logPath = `log_miner_${portOffset}.txt`;
   initializeLogger(logPath);
+
+  log.debug(`Starting RPC on port ${c.rpc.port + portOffset}`);  
+
 
   try {
     const rev = child_process.execSync('git rev-parse HEAD').toString().trim();
