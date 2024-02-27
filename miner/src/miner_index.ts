@@ -1172,16 +1172,6 @@ export async function processJobs(jobs: DBJob[]) {
   }
 }
 
-async function versionCheck() {
-  const arbiusVersion = await arbius.version();
-  if (arbiusVersion.lte(minerVersion)) {
-    log.info(`Arbius version (${arbiusVersion}) fits miner version (${minerVersion})`);
-  } else {
-    log.error(`version mismatch, have miner version ${minerVersion.toString()} and arbius is ${arbiusVersion.toString()} - upgrade your miner`);
-    process.exit(1);
-  }
-}
-
 export async function main() {
   // need extra for ethers
   log.debug("Setting max file listeners to 100 for ethers");
@@ -1193,7 +1183,7 @@ export async function main() {
   dbClearJobsByMethod('automine');
 
   log.debug("Bootup check");
-  await versionCheck();
+  // await versionCheck();
   if (c.evilmode) {
     for (let i=0; i<20; ++i) {
       log.warn('YOU HAVE EVIL MODE ENABLED, YOU WILL BE SLASHED');
@@ -1243,7 +1233,7 @@ export async function main() {
     evt:     ethers.Event,
   ) => {
     log.debug('Event.VersionChanged', version.toString());
-    await versionCheck();
+    // await versionCheck();
   });
 
   arbius.on('TaskRetracted', (
@@ -1259,7 +1249,7 @@ export async function main() {
 
   // job processor / main loop
   while (true) {
-    const jobs = await dbGetNonClaimsJobs();
+    const jobs = await dbGetJobs();
     log.debug(`OUR-LOGS: ALL JOBS ${JSON.stringify(jobs)}`);
     if (jobs.length === 0) {
       await sleep(100);

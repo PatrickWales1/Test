@@ -87,14 +87,14 @@ export async function main() {
     process.setMaxListeners(50); // TODO: Update this for throughput
 
     log.debug("Bootup check");
-    await versionCheck();
+    // await versionCheck();
       
     arbius.on('VersionChanged', async(
       version: ethers.BigNumber,
       evt:     ethers.Event,
     ) => {
       log.debug('Event.VersionChanged', version.toString());
-      await versionCheck();
+      // await versionCheck();
     });
   
     // job processor / main loop
@@ -110,7 +110,8 @@ export async function main() {
       await processAllClaims(jobs);
     }
 }
-    
+
+
 async function processAllClaims(claims: DBJob[]) { 
     for (const claim of claims) {
       const decoded = JSON.parse(claim.data);
@@ -118,11 +119,6 @@ async function processAllClaims(claims: DBJob[]) {
       await processClaim(decoded.taskid);
     }
 }
-
-function versionCheck() {
-    throw new Error('Function not implemented.');
-}
-
 
 async function processClaim(taskid: string) {
     const receipt = await expretry(async () => {
