@@ -2,7 +2,7 @@ import * as child_process from 'child_process';
 import * as fs from 'fs';
 import { initializeLogger, log } from './log';
 import { c, initializeMiningConfig } from './mc';
-import { initializeDatabase } from './db';
+import { initializeDatabase, setupSchema } from './db';
 import { initializeML } from './ml';
 import { initializeBlockchain, wallet } from './blockchain';
 import { initializeRPC } from './rpc';
@@ -36,6 +36,7 @@ async function start(configPath: string) {
   log.debug('!!!!!!!!!!!!! NOT RESETTING THE DB - so we dont lose claims !!!!!!!!!!!!!!!!')
   log.debug(`starting to load db from ${c.db_path}`);
   await initializeDatabase(c);
+  await setupSchema();
   // log.debug(`Database loaded from ${c.db_path}`);
 
   await initializeML(c);
