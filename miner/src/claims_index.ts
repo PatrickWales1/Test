@@ -101,8 +101,8 @@ export async function main() {
     while (true) {
       const jobs = await dbGetClaimsJobs(20);
       log.debug(`OUR-LOGS: ALL JOBS ${JSON.stringify(jobs)}`);
-      if (jobs.length === 0) {
-        await sleep(100);
+      if (jobs.length == 0) {
+        await sleep(2000);
         continue;
       }
   
