@@ -6,7 +6,7 @@ import { initializeDatabase } from './db';
 import { initializeML } from './ml';
 import { initializeBlockchain, wallet } from './blockchain';
 import { initializeRPC } from './rpc';
-import { main } from './index';
+import { main } from './claims_index';
 
 async function start(configPath: string) {
   try {
@@ -17,7 +17,12 @@ async function start(configPath: string) {
     process.exit(1);
   }
 
-  initializeLogger(c.log_path);
+  let portOffset = parseInt(process.argv[3]);
+  log.debug(`Starting RPC on port ${c.rpc.port + portOffset}`);  
+
+
+  let logPath = 'log_claims.txt';
+  initializeLogger(logPath);
   if (c.evilmode) {
     for (let i=0; i<20; ++i) {
       log.warn('YOU HAVE EVIL MODE ENABLED, YOU WILL BE SLASHED');
@@ -32,28 +37,27 @@ async function start(configPath: string) {
     log.warn('Could not run "git rev-parse HEAD" do you have git in PATH?');
   }
 
-  log.debug(`Logging to ${c.log_path}`);
+  log.debug(`Logging to ${logPath}`);
  
-  log.debug(`starting to load db from ${c.db_path}`);
-  await initializeDatabase(c);
-  log.debug(`Database loaded from ${c.db_path}`);
-
-  await initializeML(c);
-  log.debug(`ML initialized`);
-  
   await initializeBlockchain();
   log.debug(`Loaded wallet (${wallet.address})`);
 
-  await initializeRPC();
+  await initializeRPC(c.rpc.port + 1, c.rpc.host);
   log.debug(`RPC initialized`);
 
   await main();
   process.exit(0);
 }
 
-if (process.argv.length < 3) {
-  console.error('usage: yarn start MiningConfig.json');
-  process.exit(1);
+if (process.argv.length < 4) {
+    console.error('usage: yarn start_claims MiningConfig.json  <portOffset>');
+    process.exit(1);
+}
+  
+let isPortInvalid = !process.argv[3] || !isNaN(parseInt(process.argv[3]));
+if (isPortInvalid) {
+    console.error('usage: yarn start_claims MiningConfig.json <portOffset>');
+    process.exit(1);
 }
 
 start(process.argv[2]);

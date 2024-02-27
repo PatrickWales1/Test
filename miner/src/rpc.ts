@@ -94,7 +94,7 @@ app.post('/api/db/run', async (req: Request, res: Response) => {
   }
 });
 
-export async function initializeRPC(): Promise<any> {
+export async function initializeRPC(rpcPort: number, rpcHost: string): Promise<any> {
   return new Promise((resolve, reject) => {
     app.listen(c.rpc.port, c.rpc.host, () => {
       log.debug(`RPC server listening on ${c.rpc.host}:${c.rpc.port}`);

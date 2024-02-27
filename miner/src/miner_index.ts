@@ -982,38 +982,6 @@ async function processSolve(taskid: string) {
 
 }
 
-async function processClaim(taskid: string) {
-  const receipt = await expretry(async () => {
-    const { claimed } = await expretry(async () => await arbius.solutions(taskid));
-    log.debug("processClaim [claimed]", claimed);
-    if (claimed) {
-      log.warn(`Solution (${taskid}) already claimed`);
-      return null;
-    }
-
-    const { validator: contestationValidator } = await expretry(async () => await arbius.contestations(taskid));
-    log.debug("processClaim [contestationValidator]", contestationValidator);
-    if (contestationValidator != "0x0000000000000000000000000000000000000000") {
-      log.error(`Contestation found for solution ${taskid}, cannot claim`);
-
-      return null;
-    }
-
-    const tx = await arbius.claimSolution(taskid, {
-      gasLimit: 300_000,
-    });
-    const receipt = await tx.wait()
-    log.info(`Claim ${taskid} in ${receipt.transactionHash}`);
-    return receipt;
-  });
-
-  if (receipt == null) {
-    log.error(`Failed claiming (${taskid})`);
-    return;
-  }
-
-  log.debug(`Solution (${taskid}) claimed`);
-}
 
 async function mlStrategyReplicate(
   model: Model,
@@ -1222,8 +1190,6 @@ export async function main() {
   log.debug("Clearing old automatically added retry jobs");
   dbClearJobsByMethod('validatorStake');
   dbClearJobsByMethod('automine');
-  dbClearJobsByMethod("task");
-  dbClearJobsByMethod("solve");
 
   log.debug("Bootup check");
   await versionCheck();
@@ -1279,14 +1245,6 @@ export async function main() {
     await versionCheck();
   });
 
-  // arbius.on('TaskSubmitted', (
-  //   taskid:  string,
-  //   modelid: string,
-  //   fee:     BigNumber,
-  //   sender:  string,
-  //   evt:     ethers.Event,
-  // ) => eventHandlerTaskSubmitted(taskid, evt));
-
   arbius.on('TaskRetracted', (
     taskid:  string,
     evt:     ethers.Event,
@@ -1298,34 +1256,6 @@ export async function main() {
     evt:       ethers.Event,
   ) => eventHandlerSolutionSubmitted(taskid, evt));
 
-  // arbius.on('ContestationSubmitted', (
-  //   validator: string,
-  //   taskid:    string,
-  //   evt:       ethers.Event,
-  // ) => eventHandlerContestationSubmitted(validator, taskid, evt));
-
-  // arbius.on('ContestationVote', (
-  //   validator: string,
-  //   taskid:    string,
-  //   yea:       boolean,
-  //   evt:       ethers.Event,
-  // ) => eventHandlerContestationVote(validator, taskid, yea, evt));
-
-  /*
-  governor.on('ProposalCreated', (
-    proposalId:  string,
-    proposer:    string,
-    targets:     string,
-    values:      string,
-    signatures:  string,
-    calldatas:   string,
-    voteStart:   BigNumber,
-    voteEnd:     BigNumber,
-    description: string,
-    evt:         ethers.Event,
-  ) => eventHandlerGovernanceProposalCreated(proposalId, evt));
-  */
-
   // job processor / main loop
   while (true) {
     const jobs = await dbGetJobs();
@@ -1334,14 +1264,6 @@ export async function main() {
       await sleep(100);
       continue;
     }
-
-    let claims = jobs
-      .filter(j => j.method == 'claim')
-      .filter(j => j.waituntil < now());
-    log.debug(`OUR-LOGS: (6) START: processAllClaims len: ${claims.length}`);
-    if (claims.length > 0) {
-      await processAllClaims(claims);
-    } 
 
     let hasActiveJobs = false;
     for (const job of jobs) {
@@ -1359,15 +1281,5 @@ export async function main() {
     log.debug(`Job queue has ${jobs.length} jobs`);
     // log.debug(jobs);
     await processJobs(jobs);
-  }
-}
-
-
-async function processAllClaims(claims: DBJob[]) {
-
-  for (const claim of claims) {
-    const decoded = JSON.parse(claim.data);
-    log.debug(`OUR-LOGS: (6) START: processAllClaims ${JSON.stringify(decoded)}`);
-    await processClaim(decoded.taskid);
   }
 }
