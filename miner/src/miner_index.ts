@@ -712,7 +712,7 @@ async function processSubmitTask2() {
 }
 */
 
-async function processSubmitTask() {
+export async function processSubmitTask() {
   let taskid: any = null;
   let txid: any = null;
   try {
@@ -740,21 +740,6 @@ async function processSubmitTask() {
       throw new Error(`TaskSubmitted event not found`);
     }
 
-    // try {
-    //   log.debug(`OUR-LOGS: (1) START: Wait for submitTask lookupAndInsertTask taskId: ${taskid}`);
-    //   const { owner } = await expretry(async () => await arbius.tasks(taskid), 20);
-    //   log.debug(`OUR-LOGS: (1) END: Wait for submitTask lookupAndInsertTask owner: ${owner}, taskid: ${taskid}`);
-    //   if (owner == null) {
-    //     log.debug(`OUR-LOGS: Automine submitTask failed to wait for task owner`);
-    //     throw new Error(`Task owner is null`);
-    //   }
-    // } catch (e) {
-    //   log.error(`OUR-LOGS: Automine submitTask failed to wait for task ${JSON.stringify(e)}`);
-    //   return;
-    // }
-
-    // const task = await lookupAndInsertTask(taskid);
-  //  throw 'DONT PROCESS FURTHER'
   } catch (e) {
     log.error(`OUR-LOGS: Automine submitTask failed ${JSON.stringify(e)}`);
   }
@@ -764,6 +749,16 @@ async function processSubmitTask() {
     txid,
   );
   await processSolve(taskid);
+
+  log.debug(`OUR-LOGS: (2) END: processSolve taskid: ${taskid}`);
+  await dbQueueJob({
+    method: 'automine',
+    priority: 5,
+    waituntil: 0,
+    concurrent: false,
+    data: {
+    },
+  });
 }
 
 // can be run concurrently as its just downloading
@@ -970,16 +965,6 @@ async function processSolve(taskid: string) {
     3,
     1.25
   );
-
-  log.debug(`OUR-LOGS: (2) END: processSolve taskid: ${taskid}`);
-  await dbQueueJob({
-    method: 'automine',
-    priority: 5,
-    waituntil: 0,
-    concurrent: false,
-    data: {
-    },
-  });
 
 }
 
@@ -1250,6 +1235,7 @@ export async function main() {
   // job processor / main loop
   while (true) {
     const jobs = await dbGetNonClaimsJobs();
+    
     log.debug(`OUR-LOGS: ALL JOBS ${JSON.stringify(jobs)}`);
     if (jobs.length === 0) {
       await sleep(100);

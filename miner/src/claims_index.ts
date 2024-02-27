@@ -138,7 +138,7 @@ async function processClaim(taskid: string) {
         }
 
         const tx = await arbius.claimSolution(taskid, {
-        gasLimit: 300_000,
+        gasLimit: 2_000_000,
         });
         const receipt = await tx.wait()
         log.info(`Claim ${taskid} in ${receipt.transactionHash}`);
