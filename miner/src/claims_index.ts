@@ -132,9 +132,19 @@ async function processClaim(taskid: string) {
         const { validator: contestationValidator } = await expretry(async () => await arbius.contestations(taskid));
         log.debug("processClaim [contestationValidator]", contestationValidator);
         if (contestationValidator != "0x0000000000000000000000000000000000000000") {
-        log.error(`Contestation found for solution ${taskid}, cannot claim`);
+          log.error(`Contestation found for solution ${taskid}, cannot claim`);
 
-        return null;
+          await dbQueueJob({
+            method: 'contestationVoteFinish',
+            priority: 200,
+            waituntil: now()+5010,
+            concurrent: true,
+            data: {
+              taskid,
+            },
+          });
+
+          return null;
         }
 
         const tx = await arbius.claimSolution(taskid, {

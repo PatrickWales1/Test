@@ -336,7 +336,7 @@ async function eventHandlerSolutionSubmitted(taskid: string, evt: ethers.Event) 
       const solution = (await expretry(() => arbius.solutions(taskid))) as SolutionDetails;
       if (solution.cid !== cid) {
         log.info(`Solution found with cid ${solution.cid} does not match ours ${cid} -> eventHandlerSolutionSubmitted`);
-        // await contestSolution(taskid);
+        await contestSolution(taskid);
       } else {
         log.info(`Solution CID matches our local CID for ${taskid} -> eventHandlerSolutionSubmitted`);
       }
@@ -346,7 +346,7 @@ async function eventHandlerSolutionSubmitted(taskid: string, evt: ethers.Event) 
 
     const invalidTask = await dbGetInvalidTask(taskid);
     if (invalidTask != null) {
-      // await contestSolution(taskid);
+      await contestSolution(taskid);
     }
 
     await dbStoreSolution({ taskid, validator, blocktime, claimed, cid });
@@ -904,31 +904,12 @@ async function processSolve(taskid: string) {
     return;
   }
 
-  // try {
-  //   if (taskid != '0xc3d3e0544c80e3bb83f62659259ae1574f72a91515ab3cae3dd75cf77e1b0aea') {
-  //     log.debug(`OUR-LOGS: (4) START: Wait for Commitment: '${commitment}' and taskId: '${taskid}'`);
-  //     const {
-  //       commitmentLookup
-  //     } = await expretry(async () => await arbius.commitments(commitment), 20);
-  //     log.debug(`OUR-LOGS: (4) END: Wait for Commitment ${commitmentLookup} for commitment: '${commitment}' and taskId: '${taskid}'`);
-  //     if (commitmentLookup == null) {
-  //       log.debug(`OUR-LOGS: Commitment lookup failed for ${commitment}`);
-  //     }
-  //   }
-  // } catch (e) {
-  //   log.error(`OUR-LOGS: Commitment lookup failed ${JSON.stringify(e)}`);
-  //   return;
-  // }
-
-  // we will retry in case we didnt wait long enough for commitment
-  // if this fails otherwise, it could be because another submitted solution
-
   await expretry(
     async () => {
       try {
         log.debug(`Submitting solution ${taskid} ${cid}`);
         const tx = await solver.submitSolution(taskid, cid, {
-          gasLimit: 10_000_000,
+          gasLimit: 2_500_000,
         });
         const receipt = await tx.wait();
         log.info(`OUR-LOGS: (5) Solution submitted in ${receipt.transactionHash}`);
@@ -961,13 +942,93 @@ async function processSolve(taskid: string) {
         }
 
         log.info(`Solution found with cid ${existingSolutionCid} does not match ours ${cid}`);
-        // await contestSolution(taskid);
+        await contestSolution(taskid);
       }
     },
     3,
     1.25
   );
 
+}
+
+
+async function contestSolution(taskid: string) {
+  try {
+    log.info(`Attempt to contest ${taskid} solution`);
+
+    const validatorStake = await getValidatorStaked();
+    const validatorMinimum = await expretry(async () => await arbius.getValidatorMinimum());
+    if (validatorStake.lt(validatorMinimum.mul(110).div(100))) {
+      log.info("Validator stake is less than 110% of minimum, not contesting");
+      return;
+    }
+
+    const { owner } = await expretry(async () => await arbius.tasks(taskid));
+    log.debug(`contestSolution ${taskid} from ${owner}`);
+    if (owner === wallet.address) {
+      log.error(`Attempting to contest own solution ${taskid}  --- lets not do this`);
+      log.error(`Please report this to the developers`);
+      return;
+    }
+
+    const tx = await solver.submitContestation(taskid);
+    const receipt = await tx.wait();
+    log.info(`Submitted contestation for ${taskid} in ${receipt.transactionHash}`);
+    await dbQueueJob({
+      method: 'contestationVoteFinish',
+      priority: 200,
+      waituntil: now()+5010,
+      concurrent: true,
+      data: {
+        taskid,
+      },
+    });
+  } catch (e) {
+    log.debug(JSON.stringify(e));
+    // check if someone else submitted a contestation
+    const {
+      validator: existingContestationValidator,
+      blocktime: existingContestationBlocktime,
+    } = await expretry(async () => await arbius.contestations(taskid));
+
+    // someone else contested first
+    if (existingContestationValidator == "0x0000000000000000000000000000000000000000") {
+      log.error(`An unknown error occurred when we tried to contest ${taskid}`);
+      return;
+    }
+
+    log.info(`Contestation for ${taskid} was already created by ${existingContestationValidator}`);
+    // if we are contesting it, then we agree it is invalid
+    await voteOnContestation(taskid, true);
+  }
+}
+
+
+async function voteOnContestation(taskid: string, yea: boolean) {
+  const canVoteStatus = await expretry(async () => await arbius.validatorCanVote(wallet.address, taskid));
+  const canVote = canVoteStatus == 0x0; // success code
+
+  if (! canVote) {
+    log.debug(`[voteOnContestation] Contestation ${taskid} cannot vote (code ${canVoteStatus})`);
+    return;
+  }
+
+  const validatorStake = await getValidatorStaked();
+  const validatorMinimum = await expretry(async () => await arbius.getValidatorMinimum());
+  if (validatorStake.lt(validatorMinimum.mul(110).div(100))) {
+    log.info("Validator stake is less than 110% of minimum, not voting");
+    return;
+  }
+
+  try {
+    log.info(`Attempt to vote ${yea ? 'YES' : 'NO'} on ${taskid} contestation`);
+    const tx = await solver.voteOnContestation(taskid, yea);
+    const receipt = await tx.wait();
+    log.info(`Contestation vote ${yea ? 'YES' : 'NO'} submitted on ${taskid} in ${receipt.transactionHash}`);
+  } catch (e) {
+    log.debug(JSON.stringify(e));
+    log.error(`Failed voting on contestation ${taskid}`);
+  }
 }
 
 
@@ -1113,6 +1174,9 @@ export async function processJobs(jobs: DBJob[]) {
         return () => processSubmitTask();
       case 'validatorStake': // checks that have enough staked, queue validatorStake
         return () => processValidatorStake();
+      case 'contestationVoteFinish': // contestationVoteFinish
+        return () => processContestationVoteFinish(decoded.taskid);
+        break;        
       default:
         log.error(`Job (${job.id}) method (${job.method}) has no implementation`);
         process.exit(1);
