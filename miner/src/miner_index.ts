@@ -928,7 +928,7 @@ async function processSolve(taskid: string) {
       try {
         log.debug(`Submitting solution ${taskid} ${cid}`);
         const tx = await solver.submitSolution(taskid, cid, {
-          gasLimit: 2_500_000,
+          gasLimit: 10_000_000,
         });
         const receipt = await tx.wait();
         log.info(`OUR-LOGS: (5) Solution submitted in ${receipt.transactionHash}`);
