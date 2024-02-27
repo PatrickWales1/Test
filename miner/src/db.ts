@@ -21,9 +21,12 @@ import {
 
 let db: Database;
 
+
 export async function initializeDatabase(c: MiningConfig): Promise<any> {
   db = new Database(c.db_path);
+}
 
+export async function setupSchema() {
   const paths = [
     `sql/models.sql`,
     `sql/tasks.sql`,

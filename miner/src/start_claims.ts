@@ -23,12 +23,11 @@ async function start(configPath: string) {
   let portOffset = parseInt(process.argv[3]);
   log.debug(`Starting RPC on port ${c.rpc.port + portOffset}`);  
 
-  if (c.evilmode) {
-    for (let i=0; i<20; ++i) {
-      log.warn('YOU HAVE EVIL MODE ENABLED, YOU WILL BE SLASHED');
-      log.warn('KILL YOUR MINER IMMEDIATELY IF NOT ON TESTNET');
-    }
-  }
+  log.debug('!!!!!!!!!!!!! NOT RESETTING THE DB - so we dont lose claims !!!!!!!!!!!!!!!!')
+  log.debug(`starting to load db from ${c.db_path}`);
+  await initializeDatabase(c);
+  // log.debug(`Database loaded from ${c.db_path}`);
+
 
   try {
     const rev = child_process.execSync('git rev-parse HEAD').toString().trim();

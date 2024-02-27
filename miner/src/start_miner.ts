@@ -16,7 +16,7 @@ async function start(configPath: string) {
     console.error(`unable to parse ${configPath}`);
     process.exit(1);
   }
-  
+
   let portOffset = parseInt(process.argv[3]);
   let logPath = `log_miner_${portOffset}.txt`;
   initializeLogger(logPath);
@@ -35,7 +35,7 @@ async function start(configPath: string) {
  
   log.debug('!!!!!!!!!!!!! NOT RESETTING THE DB - so we dont lose claims !!!!!!!!!!!!!!!!')
   log.debug(`starting to load db from ${c.db_path}`);
-  // await initializeDatabase(c);
+  await initializeDatabase(c);
   // log.debug(`Database loaded from ${c.db_path}`);
 
   await initializeML(c);
