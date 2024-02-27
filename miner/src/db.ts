@@ -146,8 +146,7 @@ export async function dbGetNonClaimsJobs(limit: number = 10000): Promise<DBJob[]
   return new Promise((resolve, reject) => {
     let query = `
       SELECT * FROM jobs
-      where method != 'claim' and 
-      waituntil > ${now}
+      where method != 'claim'
       ORDER BY priority DESC
       LIMIT ?
     `;
@@ -184,8 +183,7 @@ export async function dbGetClaimsJobs(limit: number = 10000): Promise<DBJob[]> {
     let query = `
       SELECT * 
       FROM jobs
-      where method = 'claim' and 
-      waituntil > ${now}
+      where method = 'claim'
       ORDER BY priority DESC
       LIMIT ?
     `;
