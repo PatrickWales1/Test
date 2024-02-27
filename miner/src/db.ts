@@ -184,7 +184,7 @@ export async function dbGetClaimsJobs(limit: number = 10000): Promise<DBJob[]> {
       SELECT * 
       FROM jobs
       where method = 'claim'
-      ORDER BY priority DESC
+      ORDER BY waituntil ASC
       LIMIT ?
     `;
     log.debug(`OUR-LOGS: dbGetClaimsJobs: ${query} ${limit}`);

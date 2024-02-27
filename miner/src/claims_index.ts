@@ -112,7 +112,7 @@ export async function main() {
 }
 
 
-async function processAllClaims(claims: DBJob[]) { 
+export async function processAllClaims(claims: DBJob[]) { 
     for (const claim of claims) {
       const decoded = JSON.parse(claim.data);
       log.debug(`OUR-LOGS: (6) START: processAllClaims ${JSON.stringify(decoded)}`);

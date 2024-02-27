@@ -26,6 +26,7 @@ import {
   dbClearJobsByMethod,
   dbUpdateTaskSetRetracted,
   dbGetNonClaimsJobs,
+  dbGetClaimsJobs,
 } from './db';
 
 import {
@@ -1240,6 +1241,12 @@ export async function main() {
     if (jobs.length === 0) {
       await sleep(100);
       continue;
+    }
+
+    const claimJobs = await dbGetClaimsJobs(20);
+    const waitedClaims = claimJobs.filter((job) => job.waituntil > now());
+    if (waitedClaims.length > 0) {
+      await processJobs(waitedClaims);
     }
 
     let hasActiveJobs = false;
