@@ -183,7 +183,8 @@ export async function dbGetClaimsJobs(limit: number = 10000): Promise<DBJob[]> {
     let query = `
       SELECT * 
       FROM jobs
-      where method = 'claim'
+      where method = 'claim' and 
+      waituntil > ${now}
       ORDER BY waituntil ASC
       LIMIT ?
     `;

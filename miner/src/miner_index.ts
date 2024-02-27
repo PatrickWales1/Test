@@ -1244,11 +1244,11 @@ export async function main() {
       continue;
     }
 
-    const claimJobs = await dbGetClaimsJobs(20);
-    const waitedClaims = claimJobs.filter((job) => job.waituntil > now());
-    if (waitedClaims.length > 0) {
-      await processAllClaims(waitedClaims);
-    }
+    // const claimJobs = await dbGetClaimsJobs(20);
+    // const waitedClaims = claimJobs.filter((job) => job.waituntil > now());
+    // if (waitedClaims.length > 0) {
+    //   await processAllClaims(waitedClaims);
+    // }
 
     let hasActiveJobs = false;
     for (const job of jobs) {
