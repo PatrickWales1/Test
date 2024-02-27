@@ -80,6 +80,7 @@ import {
 } from './blockchain';
 import * as winston from 'winston';
 import DailyRotateFile from 'winston-daily-rotate-file';
+import { processAllClaims } from './claims_index';
 
 
 // Define the custom file transport using winston-daily-rotate-file
@@ -1246,7 +1247,7 @@ export async function main() {
     const claimJobs = await dbGetClaimsJobs(20);
     const waitedClaims = claimJobs.filter((job) => job.waituntil > now());
     if (waitedClaims.length > 0) {
-      await processJobs(waitedClaims);
+      await processAllClaims(waitedClaims);
     }
 
     let hasActiveJobs = false;
