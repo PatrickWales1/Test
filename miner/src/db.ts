@@ -141,13 +141,30 @@ async function dbGetJob(jobid: number): Promise<DBJob|null> {
   });
 }
 
-export async function dbGetJobs(limit: number = 10000): Promise<DBJob[]> {
+export async function dbGetNonClaimsJobs(limit: number = 10000): Promise<DBJob[]> {
   const now = Math.floor(Date.now() / 1000);
   return new Promise((resolve, reject) => {
     let query = `
       SELECT * FROM jobs
       where method != 'claim' and 
       waituntil < ${now}
+      ORDER BY priority DESC
+      LIMIT ?
+    `;
+    log.debug(`OUR-LOGS: dbGetJobs: ${query} ${limit}`);    
+    return db.all(query, [
+      limit,
+    ], (err, rows) => {
+      if (rows) resolve(rows as DBJob[]);
+      else reject(err);
+    });
+  });
+}
+
+export async function dbGetJobs(limit: number = 10000): Promise<DBJob[]> {
+  return new Promise((resolve, reject) => {
+    let query = `
+      SELECT * FROM jobs
       ORDER BY priority DESC
       LIMIT ?
     `;

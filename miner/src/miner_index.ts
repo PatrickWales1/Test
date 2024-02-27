@@ -25,6 +25,7 @@ import {
   dbDeleteJob,
   dbClearJobsByMethod,
   dbUpdateTaskSetRetracted,
+  dbGetNonClaimsJobs,
 } from './db';
 
 import {
@@ -1258,7 +1259,7 @@ export async function main() {
 
   // job processor / main loop
   while (true) {
-    const jobs = await dbGetJobs();
+    const jobs = await dbGetNonClaimsJobs();
     log.debug(`OUR-LOGS: ALL JOBS ${JSON.stringify(jobs)}`);
     if (jobs.length === 0) {
       await sleep(100);
