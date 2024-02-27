@@ -58,6 +58,7 @@ if (process.argv.length < 4) {
 
 let isPortInvalid = !process.argv[3] || !isNaN(parseInt(process.argv[3]));
 if (isPortInvalid) {
+  console.error(`port offset is invalid: ${process.argv?.[3]}`);
   console.error('usage: yarn start_miner MiningConfig.json <portOffset>');
   process.exit(1);
 }
